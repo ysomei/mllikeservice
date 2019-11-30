@@ -26,7 +26,8 @@ class MLLikeServiceWeb < Sinatra::Base
     puts "#{Time.now.to_s[0, 19]} [#{$$}] #{msg}"
   end
 
-  def root_path; return "/mllikeservice"; end
+  #def root_path; return "/mllikeservice"; end # for nginx :p
+  def root_path; return ""; end
   
   # --------------------------------
   varpath = File.expand_path("../../var", __FILE__)
