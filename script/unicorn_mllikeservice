@@ -1,0 +1,67 @@
+#!/bin/bash
+# ----------------------------------------------------------------------------
+# if running on production
+# use # launchctl load -w net.sphear.mllikeservice.plist 
+# before copy to /Library/LaunchDaemons/ execution.
+# ----------------------------------------------------------------------------
+
+APPNAME="ML Like Service"
+#ENV=development
+ENV=production
+export RACK_ENV=${ENV}
+
+BUNDLEPATH=~/.rbenv/shims
+ROOTDIR=$(cd $(dirname $0);cd ../; pwd)
+
+PORT=8286
+CONF=${ROOTDIR}/config/unicorn.rb
+GEMFILE=${ROOTDIR}/Gemfile
+
+start ()
+{
+    ISALIVE=`ps -ax | grep -e 'unicorn master' | grep -e "-p ${PORT}" | wc -l`
+    if [ $ISALIVE == 0 ]; then
+        echo "starting ${APPNAME} on Sinatra-Unicorn <${ENV}>..."
+        cd $ROOTDIR
+        ${BUNDLEPATH}/bundle exec unicorn -c $CONF -E $ENV -p $PORT -D 
+    else
+        echo "${APPNAME} is already started!"
+    fi
+}
+
+stop ()
+{
+    ISALIVE=`ps -ax | grep -e 'unicorn master' | grep -e "-p ${PORT}" | wc -l`
+    if [ $ISALIVE == 0 ]; then
+        echo "${APPNAME} is not started."
+    else
+        echo "stopping ${APPNAME}..."
+        PID=`ps -ax | grep -e 'unicorn master' | grep -e "-p ${PORT}" | awk '{print $1}'`
+        kill -QUIT $PID
+    fi
+}
+
+restart ()
+{
+    echo "restarting ${APPNAME}..."
+    stop
+    sleep 3
+    start
+}
+
+case "$1" in
+    start)
+	start ;;
+    stop)
+	stop ;;
+    restart)
+	restart ;;
+    *)
+	echo "Usage: $0 [start|stop|restart]"
+        exit 0
+	;;
+esac
+
+echo "done."
+exit 0
+

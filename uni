@@ -1,0 +1,7 @@
+#!/bin/sh
+CONF=./config/unicorn.rb
+RACK_ENV=development
+
+echo "Starting Unicorn for Sinatra Application! <${RACK_ENV}>"
+bundle exec unicorn -c $CONF -E $RACK_ENV $@
+

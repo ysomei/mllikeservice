@@ -1,0 +1,65 @@
+<style type="text/css">
+  #mluser_area table {
+    border: solid 1px #000;
+    border-collapse: collapse;
+  }
+  #mluser_area th, tr, td {
+    border: solid 1px #000;
+    border-collapse: collapse;
+  }
+  
+</style>
+
+<div id="mluser_area">
+  ML Users
+  &nbsp;&nbsp;<input type="button" name="usrbtn" value=" add new user"
+		     onclick="menu.add_new_user();" />
+  <br />
+  <div style="margin-left: 16px;">
+    Name: <input type="text" name="uname" id="uname" size="40" /><br />
+    MailAddress: <input type="text" name="umail" id="umail" size="40" /><br />
+  </div>
+  <br />
+  <div style="margin-left: 16px;">
+    Member List<br />
+    <table>
+      <tr>
+	<th></th>
+	<th>MailAddress</th>
+	<th>Nickname</th>
+	<th></th>
+      </tr>
+      <% @users.each_with_index do |user, i|
+         umail, uname = user.to_s.strip.split(",") %>
+      <tr>
+	<td style="width: 40px; text-align: center;"><%= i + 1 %></td>
+	<td style="width: 260px; padding-left: 8px;">
+	  <div id="mailarea_<%= i %>"><%= umail %></div>
+	  <div id="maileditarea_<%= i %>" style="display: none;">
+	    <input type="text" name="newmail_<%= i %>" id="newmail_<%= i %>"
+		   value="<%= umail %>" size="40" />
+	  </div>
+	</td>
+	<td style="width: 260px; padding-left: 8px;">
+	  <div id="namearea_<%= i %>"><%= uname %></div>
+	  <div id="nameeditarea_<%= i %>" style="display: none;">
+	    <input type="text" name="newname_<%= i %>" id="newname_<%= i %>"
+		   value="<%= uname %>" size="40" />
+	  </div>
+	</td>
+	<td>
+	  <div id="btnarea_<%= i %>">
+	    <input type="button" name="ent" value=" edit "
+		   onclick="menu.edit_userinfo(<%= i %>);" /></div>
+	  <div id="btneditarea_<%= i %>" style="display: none;">
+	    <input type="button" name="ent" value=" update "
+		   onclick="menu.update_userinfo(<%= i %>);" /></div>
+	  </div>
+	    
+	</td>
+      </tr>
+      <% end %>
+    </table>
+  </div>
+</div>
+

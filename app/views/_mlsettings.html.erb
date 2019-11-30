@@ -1,0 +1,31 @@
+ML Name: <%= @settings["mlname"] %><br />
+ML Address: <%= @settings["mailaddress"] %><br />
+<br />
+Settings
+&nbsp;&nbsp;<input type="button" name="setbtn" value=" update settings "
+		   onclick="menu.update_settings();" />
+<input type="hidden" name="mladdr" id="mladdr"
+       value="<%= @settings["mailaddress"] %>" />
+<br />
+<div style="margin-left: 16px;">
+  <% @settings.each do |k, v|
+       next if ["mailaddress"].include?(k) %>
+  <%= k %>: 
+    <% if k == "rcvtype"
+         stypes = ["POP3", "IMAP"] %>
+    <select name="<%= k %>" id="<%= k %>">
+      <% stypes.each_with_index do |st, i|
+           selstr = ""
+           selstr = " selected" if st == v %>
+      <option value="<%= st %>"<%= selstr %>><%= st %></option>
+      <% end %>
+    </select>
+    <% else
+         itype = "text"
+         itype = "password" if k == "password" %>
+    <input type="<%= itype %>" name="<%= k %>" id="<%= k %>" size="40"
+	 value="<%= v %>" />
+    <% end %>
+    <br />
+  <% end %>
+</div>

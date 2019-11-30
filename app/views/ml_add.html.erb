@@ -1,0 +1,31 @@
+<div id="_header">
+  <div class="title"><h3>Add ML</h3></div>
+  <div class="navigate_prev">
+    <a href="<%= root_path %>/">戻る(Prev)</a>
+  </div>
+</div>
+
+<div id="_body">
+  <form name="add_form" id="add_form" method="post"
+	action="<%= root_path %>/add_new_ml">
+    ML Name:
+    <input type="text" name="mlname" id="mlname" size="40" /><br />
+    ML MailAddress:
+    <input type="text" name="mailaddr" id="mailaddr" size="40" /><br />
+    <br />
+    Mail Server:
+    <input type="text" name="smtpsrv" id="smtpsrv" size="40" /><br />
+    IMAP / POP3
+    <select name="rcvtype" id="rcvtype">
+      <option value="POP3">POP3</option>
+      <option value="IMAP">IMAP</option>
+    </select><br />
+    Account:
+    <input type="text" name="account" id="account" size="25" /><br />
+    Password:
+    <input type="password" name="passwd" id="passwd" size="25" /><br />
+    <br />
+    <input type="button" name="ent" value=" Add New ML "
+	   onclick="menu.add_new_ml();" />
+  </form>
+</div>

@@ -1,0 +1,274 @@
+# -*- coding: utf-8 -*-
+require "net/http"
+require "uri"
+require "cgi"
+
+
+#OpenSSL::X509::Store.class_eval do
+#  alias _set_default_paths set_default_paths
+#  def set_default_paths
+#    self._set_default_paths
+#    cerpath = File.expand_path("../../certificate", __FILE__)
+#    cafile = cerpath + "/epg2ca.pem"
+#    self.add_file cafile
+#  end
+#end
+
+class WebRequest  
+  attr_accessor :user_id, :user_password, :url
+  
+  def initialize(requestaddress, logger = nil)
+    @url = requestaddress
+    @logger = logger
+
+    # certification check
+    @cafile = nil
+    @certfile = nil
+    @certpass = nil
+    cerpath = File.expand_path("../../certificate", __FILE__)
+    @certfile = Dir.glob(cerpath + "/*.p12").first
+    unless @certfile.nil?
+      @certpass = File.read(@certfile.gsub("p12", "txt"))
+      @cafile = cerpath + "/epg2ca.cer" #pem"
+      # .cer to .pem -> $ openssl x509 -inform der -in cert.cer -out cert.pem
+      # -> download from https://www.eppcert.jp/repository/
+    end    
+  end
+
+  def new_https(uri, port = 443)
+    https = Net::HTTP.new(uri.host, port)
+    https.use_ssl = true
+    if @certfile.nil?
+      https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    else
+      pkcs = OpenSSL::PKCS12.new(File.read(@certfile), @certpass)
+      https.verify_mode = OpenSSL::SSL::VERIFY_NONE #PEER
+      https.ca_file = @cafile
+      https.key = pkcs.key
+      https.cert = pkcs.certificate
+      https.verify_depth = 5
+    end
+    return https
+  end
+  
+  # --------------------------------------------------------------------------
+  # --
+  #   postdata - Hash -> { 1 => 10.2, 2 => 12, 3 => "hoge" ... }
+  #   endpoint - String -> "https://hoge.tara/setvalues"
+  def post(postdata, endpoint, htmlret = true, headers = {})
+    reqaddr = @url + endpoint
+    uri = URI.parse(reqaddr)
+    response = nil
+    begin
+      if reqaddr =~ /^https/
+        https = new_https(uri)
+        #https = Net::HTTP.new(uri.host, 443)
+        #https.use_ssl = true
+        #if @certfile.nil?
+        #  https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        #else
+        #  pkcs = OpenSSL::PKCS12.new(@certfile, @certpass)
+        #  https.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        #  https.key = pkcs.key
+        #  https.cert = pkcs.certificate
+        #end
+        https.start{|h|
+          request = Net::HTTP::Post.new(uri.path)
+          request.basic_auth(@user_id, @user_password) unless @user_id.nil?
+          headers.each do |k, v|
+            request[k] = v
+          end
+          if postdata.keys.collect{|c| c.to_s}.include?("data")
+            body, boundary = multipart_mixed(postdata)
+            request["Content-Type"] = "multipart/mixed; boundary=#{boundary}"
+            request.body = body
+          else
+            request.set_form_data(postdata)
+          end
+          response = h.request(request)
+        }
+      else
+        Net::HTTP.start(uri.host, uri.port){|http|
+          request = Net::HTTP::Post.new(uri.path)
+          request.basic_auth(@user_id, @user_password) unless @user_id.nil?
+          headers.each do |k, v|
+            request[k] = v
+          end
+          if postdata.keys.collect{|c| c.to_s}.include?("data")
+            body, boundary = multipart_mixed(postdata)
+            request["Content-Type"] = "multipart/mixed; boundary=#{boundary}"
+            request.body = body
+          else
+            request.set_form_data(postdata)
+          end
+          response = http.request(request)
+        }
+      end
+      jsondata = response.body.to_s.strip
+      errflg = false
+      errflg = true if jsondata =~ /^System\..+?Exception/
+      errflg = true if htmlret == false && jsondata =~ /^<html>/
+      if errflg
+        raise WebRequestError.new(jsondata.force_encoding("utf-8"))
+      end      
+    rescue WebRequestError
+      jsondata = nil
+      unless @logger.nil?
+        @logger.error("WebRequestError: can not send data.")
+        @logger.error("#{$!}")
+      end
+      #else
+        p $!
+        $!.backtrace.reverse.each do |b|
+          p b
+        end
+      #end
+    rescue
+      p $!
+      jsondata = nil
+      response = Net::HTTPResponse.new(0.9, 503, $!) # service unavailable
+    end
+    return jsondata, response.code.to_i, response if htmlret
+    return jsondata
+  end
+
+  # --
+  #  getdata - Hash -> { 1 => 10.2, 2 => 12, 3 => "hoge" ... }
+  #  endpoint - String -> "https://hoge.tara/setvalues"
+  def get(getdata, endpoint, htmlret = true, headers = {})
+    reqaddr = @url + endpoint
+    dparams = URI.encode_www_form(getdata)
+    uri = URI.parse(reqaddr + "?" + dparams)
+    response = nil
+    begin
+      if reqaddr =~ /^https/
+        https = new_https(uri)
+        #https = Net::HTTP.new(uri.host, 443)
+        #https.use_ssl = true
+        #if @certfile.nil?
+        #  https.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        #else
+        #  pkcs = OpenSSL::PKCS12.new(@certfile, @certpass)
+        #  https.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        #  https.key = pkcs.key
+        #  https.cert = pkcs.certificate
+        #end
+        https.start{|h|
+          request = Net::HTTP::Get.new(uri.request_uri)
+          request.basic_auth(@user_id, @user_password) unless @user_id.nil?
+          #headers.each do |k, v|
+          #  request[k] = v
+          #end
+          response = h.request(request)
+        }
+      else
+        Net::HTTP.start(uri.host, uri.port){|http|
+          request = Net::HTTP::Get.new(uri.request_uri)
+          request.basic_auth(@user_id, @user_password) unless @user_id.nil?
+          #headers.each do |k, v|
+          #  p ["k: #{k} v: #{v}"]
+          #  request[k] = v
+          #end
+          response = http.request(request)
+        }
+      end
+      jsondata = response.body.to_s.strip
+      errflg = false
+      errflg = true if jsondata =~ /^System\..+?Exception/
+      errflg = true if htmlret == false && jsondata =~ /^<html>/
+      if errflg
+        raise WebRequestError.new(jsondata.force_encoding("utf-8"))
+      end      
+    rescue WebRequestError
+      jsondata = nil
+      unless @logger.nil?
+        @logger.error("WebRequestError: can not send data.")
+        @logger.error("#{$!}")
+      else
+        p $!
+        $!.backtrace.reverse.each do |b|
+          p b
+        end
+      end
+    rescue
+      jsondata = nil
+      response = Net::HTTPResponse.new(0.9, 503, $!) # service unavailable      
+    end
+    return jsondata, response.code.to_i, response if htmlret
+    return jsondata    
+  end
+
+  # --------------------------------------------------------------------------
+  def create_401_response(response, getdata, endpoint)
+    reqaddr = @url + endpoint
+    dparams = URI.encode_www_form(getdata)
+    uri = URI.parse(reqaddr + "?" + dparams)
+
+    auth_info_str = response["WWW-Authenticate"]
+    auth_info_str.gsub!("Digest ", "")
+    auth_info = Hash.new
+    auth_info_str.split(",").each do |sstr|
+      sst = sstr.scan(/[\w\s\d]+\=*/)
+      auth_info[sst[0].to_s.strip.gsub("=", "")] = sst[1].to_s.strip
+    end
+    realm = auth_info["realm"]
+    nonce = auth_info["nonce"]
+    qop = auth_info["qop"]
+    user_info = Digest::MD5.hexdigest("#{@user_id}:#{realm}:#{@user_password}")
+    http_info = Digest::MD5.hexdigest("get:#{uri.path}")
+    cnonce = rand((36 ** 20)...(36 ** 21)).to_s(36)
+    nc = "000000001"
+    digest_response = Digest::MD5.hexdigest("#{user_info}:#{realm}:#{nc}:#{cnonce}:#{qop}:#{http_info}")
+    authorization = %Q(Digest username="#{@user_id}", realm="#{realm}", nonce="#{nonce}", uri="#{uri.path}", algorithm="MD5", response="#{digest_response}", qop="#{qop}", nc="#{nc}", cnonce="#{cnonce}")
+    
+    return authorization        
+  end
+
+  # --------------------------------------------------------------------------
+  def multipart_mixed(params)
+    endl = "\r\n"
+    hyp = "--"
+    boundary = Digest::MD5.hexdigest(params.to_s) + "_" + Time.now.to_f.to_s.gsub(".", "")
+
+    body = ""
+    params.each do |k, v|
+      body += hyp + boundary + endl
+      case k
+      when "filename"
+        if params.keys.include?("data")
+          # nop
+        else
+          # text data :p
+          body += "Content-Type: text/plain; charset=utf-8" + endl
+          body += "Content-Disposition: form-data; name=\"" + k + "\"" + endl
+          body += endl
+          body += v
+          body += endl                  
+        end
+      when "data"
+        # base64 encoded binary :p
+        body += "Content-Type: application/octet-stream; charset=utf-8" + endl
+        body += "Content-Transfer-Encoding: binary" + endl
+        body += "Content-Disposition: form-data; name=\"" + k + "\"; filename=\"" + params["filename"] + "\"" + endl
+        body += endl
+        body += v
+        body += endl        
+      else
+        # text data :p
+        body += "Content-Type: text/plain; charset=utf-8" + endl
+        body += "Content-Disposition: form-data; name=\"" + k + "\"" + endl
+        body += endl
+        body += v
+        body += endl        
+      end      
+    end
+    body += hyp + boundary + hyp + endl
+    
+    return body, boundary
+  end
+  
+end
+
+# ------------------------------------------------------------------------------
+class WebRequestError < StandardError
+end

@@ -1,0 +1,17 @@
+<div id="_header">
+  <div class="title"><h3>ML Info</h3></div>
+  <div class="navigate_prev">
+    <a href="<%= root_path %>/mllist">戻る(Prev)</a>
+  </div>
+</div>
+
+<div id="_body">
+  <input type="hidden" name="mladdr" id="mladdr" value="<%= @mladdr %>" />
+  <div id="ml_settings">
+    <%= erb :_mlsettings %>
+  </div><br />
+  
+  <div id="ml_users">
+    <%= erb :_mlusers %>
+  </div>  
+</div>

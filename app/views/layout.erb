@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>ML Like Service</title>
+    <script type="text/javascript"
+	    src="<%= root_path %>/javascripts/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript"
+	    src="<%= root_path %>/javascripts/application.js"></script>
+    <script type="text/javascript"
+	    src="<%= root_path %>/javascripts/menu.js"></script>
+    
+    <link rel="stylesheet" type="text/css"
+	  href="<%= root_path %>/stylesheets/application.css" />
+    <script type="text/javascript">
+      var root_path = "<%= root_path %>";
+    </script>
+  </head>
+  <body>
+    <%= yield %>
+
+    <% if @_footer.nil? || @_footer == false %>
+    <div id="_footer">
+      <hr /><span class="signiture">2019 (c) Sphear</span>
+    </div>
+    <% end %>
+  </body>
+</html>
+ 

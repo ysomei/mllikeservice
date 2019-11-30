@@ -1,0 +1,93 @@
+/* application style sheet */
+
+body {
+  background-color: #FFF;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+}
+
+#_header {
+  background-color: #008;
+  padding: 0px;
+  margin: 0px;
+  height: 56px;
+  text-align: center;
+}
+
+#_header .title {
+  text-align: left;
+  color: #FFF;
+  width: 800px;
+  margin: 0px auto;
+  padding: 16px 0px 0px;
+  border: 0px solid #0FF;
+}
+
+#_header .title h3 {
+  font-family: sans-serif;
+  font-size: 14pt;
+  color: #fff;
+  text-align: left; 
+  padding: 0px;
+  margin: 0px;
+}
+
+#_header .navigate_prev {
+  text-align: left;
+  font-family: sans-serif;
+  padding: 0px 0px 0px 32px;  
+  font-size: small;
+}
+
+#_body {
+  border: 0px solid #F00;
+  width: 800px;
+  text-align: left;
+  margin: 20px auto;
+  clear: both;
+}
+
+#_header div a {
+  font-size: small;
+  text-decoration: none;
+  color: #FFF;
+}
+
+#_tab div {
+  float: left;
+  width: 100px;
+  border: 1px solid #eee;
+  padding: 5px;
+  margin: 0px 5px 10px 0px;
+  text-align: center;
+  cursor: pointer;
+  font-size: small;
+}
+
+#graph_area {
+  clear: both;
+}
+
+#forecast_result_area {
+  clear: both;
+}
+
+.selected_tab {
+  background-color: #fff;
+  color: #000;
+}
+.unselected_tab {
+  background-color: #ddd;
+  color: #888;
+}
+
+.splus_00 {
+  background-color: #cff;
+}
+.splus_16 {
+  background-color: #fff;
+}
+.splus_44 {
+  background-color: #cff;
+}
