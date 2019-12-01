@@ -24,9 +24,12 @@ class MLMail
     @smtpport = 587 if @smtpport.zero?
     @starttls = true
     
-    @cacpath = File.expand_path("../../var", __FILE__)
+    @cacpath = File.expand_path("../../../var", __FILE__)
     if File.exist?("/mnt/ramdisk/.ramdisk")
       @cacpath = "/mnt/ramdisk/cache"
+      Dir.mkdir(@cacpath) unless Dir.exist?(@cacpath)
+    else
+      @cacpath = File.expand_path("../../../var/cache", __FILE__)
       Dir.mkdir(@cacpath) unless Dir.exist?(@cacpath)
     end
 
